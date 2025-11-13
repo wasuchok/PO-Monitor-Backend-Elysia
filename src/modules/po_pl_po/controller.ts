@@ -7,6 +7,15 @@ const parsePositiveInt = (value: unknown, fallback: number) => {
   return Number.isFinite(parsed) && parsed > 0 ? Math.floor(parsed) : fallback;
 };
 
+const parsePerPage = (value: unknown, fallback: number) => {
+  if (value === undefined || value === null) return fallback;
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) return fallback;
+  const floored = Math.floor(parsed);
+  if (floored === 0) return 0;
+  return floored > 0 ? floored : fallback;
+};
+
 const parseString = (value: unknown) =>
   typeof value === "string" && value.trim().length > 0 ? value.trim() : undefined;
 
@@ -26,7 +35,7 @@ export const PlPoPlController = new Elysia({ prefix: "/z_po_pl_po" })
     async ({ query }) => {
       const startedAt = Date.now();
       const page = parsePositiveInt(query?.page, 1);
-      const perPage = parsePositiveInt(query?.perPage, 10);
+      const perPage = parsePerPage(query?.perPage, 10);
       const filters: PoPlPoFilters = {
         division: parseString(query?.division),
         arrivalDate: parseString(query?.arrivalDate ?? query?.arrDate),
@@ -58,11 +67,11 @@ export const PlPoPlController = new Elysia({ prefix: "/z_po_pl_po" })
           {
             name: "perPage",
             in: "query",
-            description: "Number of records returned per page",
+            description: "Number of records returned per page (set 0 to fetch all)",
             required: false,
             schema: {
               type: "integer",
-              minimum: 1,
+              minimum: 0,
               maximum: 100,
               default: 10,
             },
@@ -127,7 +136,7 @@ export const PoCalendarController = new Elysia({ prefix: "/po" }).get(
     const month = parseMonth(query?.month, now.getMonth() + 1);
     const year = parseYear(query?.year, now.getFullYear());
     const page = parsePositiveInt(query?.page, 1);
-    const perPage = parsePositiveInt(query?.perPage, 10);
+    const perPage = parsePerPage(query?.perPage, 10);
 
     const result = await PlPoPlService.getCalendarEntries(page, perPage, {
       month,
@@ -189,11 +198,11 @@ export const PoCalendarController = new Elysia({ prefix: "/po" }).get(
         {
           name: "perPage",
           in: "query",
-          description: "จำนวนรายการต่อหน้า",
+          description: "จำนวนรายการต่อหน้า (ใส่ 0 เพื่อแสดงทั้งหมด)",
           required: false,
           schema: {
             type: "integer",
-            minimum: 1,
+            minimum: 0,
             maximum: 100,
             default: 10,
           },

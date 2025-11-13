@@ -43,7 +43,10 @@ export const PlPoPlService = {
         perPage = 10,
         filters: PoPlPoFilters = {}
     ): Promise<PaginatedResult<PoPlPoInstance>> => {
-        const offset = (page - 1) * perPage;
+        const shouldPaginate = perPage > 0;
+        const effectivePage = shouldPaginate ? page : 1;
+        const offset = shouldPaginate ? (effectivePage - 1) * perPage : undefined;
+        const limit = shouldPaginate ? perPage : undefined;
         const where: WhereOptions = {};
 
         if (filters.division) {
@@ -61,16 +64,16 @@ export const PlPoPlService = {
         }
 
         const result = await Po_Pl_Po.findAndCountAll({
-            limit: perPage,
+            limit,
             offset,
             where,
         });
 
         const pagination: PaginationMeta = {
             total: result.count,
-            currentPage: page,
+            currentPage: effectivePage,
             perPage,
-            totalPages: perPage ? Math.ceil(result.count / perPage) : 0,
+            totalPages: shouldPaginate ? Math.ceil(result.count / perPage) : 1,
         };
 
         return {
@@ -105,7 +108,10 @@ export const PlPoPlService = {
     ): Promise<PaginatedResult<CalendarEntry>> => {
         const sanitizedMonth = Math.min(Math.max(filters.month, 1), 12);
         const sanitizedYear = filters.year;
-        const offset = (page - 1) * perPage;
+        const shouldPaginate = perPage > 0;
+        const effectivePage = shouldPaginate ? page : 1;
+        const offset = shouldPaginate ? (effectivePage - 1) * perPage : undefined;
+        const limit = shouldPaginate ? perPage : undefined;
 
         const startOfMonth = new Date(Date.UTC(sanitizedYear, sanitizedMonth - 1, 1));
         const endOfMonth = new Date(Date.UTC(sanitizedYear, sanitizedMonth, 0));
@@ -127,16 +133,16 @@ export const PlPoPlService = {
                 ["po_date", "ASC"],
                 ["po_no", "ASC"],
             ],
-            limit: perPage,
+            limit,
             offset,
             raw: true,
         });
 
         const pagination: PaginationMeta = {
             total: result.count,
-            currentPage: page,
+            currentPage: effectivePage,
             perPage,
-            totalPages: perPage ? Math.ceil(result.count / perPage) : 0,
+            totalPages: shouldPaginate ? Math.ceil(result.count / perPage) : 1,
         };
 
         return {
