@@ -1,7 +1,7 @@
-import { Elysia } from "elysia";
+import { app } from './app';
 
-const app = new Elysia().get("/", () => "Hello Elysia").listen(3000);
 
-console.log(
-  `🦊 Elysia is running at ${app.server?.hostname}:${app.server?.port}`
-);
+const setup = async () => {
+  app.listen(8000);
+};
+setup();
