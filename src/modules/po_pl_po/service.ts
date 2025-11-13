@@ -1,4 +1,4 @@
-import { Op, type WhereOptions } from "sequelize";
+import { Op, type WhereOptions, fn, col } from "sequelize";
 import { Po_Pl_Po } from "./model";
 import type { PaginatedResult, PaginationMeta } from "../../utils/response";
 
@@ -7,6 +7,11 @@ export interface PoPlPoFilters {
   division?: string;
   arrivalDate?: string;
   itemDesc?: string;
+}
+
+export interface DivisionSummary {
+  division: string | null;
+  totalOrders: number;
 }
 
 export const PlPoPlService = {
@@ -49,5 +54,25 @@ export const PlPoPlService = {
       data: result.rows,
       pagination,
     };
+  },
+
+  listDivisions: async (): Promise<DivisionSummary[]> => {
+    const rows = await Po_Pl_Po.findAll({
+      attributes: [
+        "division",
+        [fn("COUNT", col("po_no")), "totalOrders"],
+      ],
+      group: ["division"],
+      order: [["division", "ASC"]],
+      raw: true,
+    });
+
+    return rows.map(
+      (row: Record<string, unknown>): DivisionSummary => ({
+        division:
+          typeof row.division === "string" ? row.division : row.division ?? null,
+        totalOrders: Number(row.totalOrders ?? 0),
+      })
+    );
   },
 };
