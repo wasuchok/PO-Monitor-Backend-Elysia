@@ -10,6 +10,16 @@ const parsePositiveInt = (value: unknown, fallback: number) => {
 const parseString = (value: unknown) =>
   typeof value === "string" && value.trim().length > 0 ? value.trim() : undefined;
 
+const parseMonth = (value: unknown, fallback: number) => {
+  const parsed = parsePositiveInt(value, fallback);
+  return parsed >= 1 && parsed <= 12 ? parsed : fallback;
+};
+
+const parseYear = (value: unknown, fallback: number) => {
+  const parsed = parsePositiveInt(value, fallback);
+  return parsed >= 1900 ? parsed : fallback;
+};
+
 export const PlPoPlController = new Elysia({ prefix: "/z_po_pl_po" })
   .get(
     "/",
@@ -108,3 +118,87 @@ export const PlPoPlController = new Elysia({ prefix: "/z_po_pl_po" })
       },
     }
   );
+
+export const PoCalendarController = new Elysia({ prefix: "/po" }).get(
+  "/calendar",
+  async ({ query }) => {
+    const startedAt = Date.now();
+    const now = new Date();
+    const month = parseMonth(query?.month, now.getMonth() + 1);
+    const year = parseYear(query?.year, now.getFullYear());
+    const page = parsePositiveInt(query?.page, 1);
+    const perPage = parsePositiveInt(query?.perPage, 10);
+
+    const result = await PlPoPlService.getCalendarEntries(page, perPage, {
+      month,
+      year,
+      division: parseString(query?.division),
+    });
+
+    return buildResponse(result.data, {
+      startTime: startedAt,
+      pagination: result.pagination,
+    });
+  },
+  {
+    detail: {
+      tags: ["Z_PO_PL_PO"],
+      summary: "PO calendar filtered by month and year",
+      parameters: [
+        {
+          name: "month",
+          in: "query",
+          description: "เดือนที่ต้องการ (1-12)",
+          required: false,
+          schema: {
+            type: "integer",
+            minimum: 1,
+            maximum: 12,
+          },
+        },
+        {
+          name: "year",
+          in: "query",
+          description: "ปี (เช่น 2024)",
+          required: false,
+          schema: {
+            type: "integer",
+            minimum: 1900,
+          },
+        },
+        {
+          name: "division",
+          in: "query",
+          description: "รหัส Division (ถ้าไม่ส่งจะแสดงทุก Division)",
+          required: false,
+          schema: {
+            type: "string",
+          },
+        },
+        {
+          name: "page",
+          in: "query",
+          description: "หมายเลขหน้า (เริ่ม 1)",
+          required: false,
+          schema: {
+            type: "integer",
+            minimum: 1,
+            default: 1,
+          },
+        },
+        {
+          name: "perPage",
+          in: "query",
+          description: "จำนวนรายการต่อหน้า",
+          required: false,
+          schema: {
+            type: "integer",
+            minimum: 1,
+            maximum: 100,
+            default: 10,
+          },
+        },
+      ],
+    },
+  }
+);
