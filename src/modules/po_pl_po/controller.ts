@@ -1,6 +1,6 @@
 import { Elysia } from "elysia";
-import { PlPoPlService, type PoPlPoFilters } from "./service";
 import { buildResponse } from "../../utils/response";
+import { PlPoPlService, type PoPlPoFilters } from "./service";
 
 const parsePositiveInt = (value: unknown, fallback: number) => {
   const parsed = Number(value);
@@ -122,6 +122,61 @@ export const PlPoPlController = new Elysia({ prefix: "/z_po_pl_po" })
         responses: {
           200: {
             description: "Division list with aggregated counts",
+          },
+        },
+      },
+    }
+  )
+  .get(
+    "/detail/:poNo",
+    async ({ params, set }) => {
+      const startedAt = Date.now();
+      const poNo = parseString(params?.poNo);
+
+      if (!poNo) {
+        set.status = 400;
+        return buildResponse(null, {
+          startTime: startedAt,
+          message: "PO_No is required",
+        });
+      }
+
+      const purchaseOrder = await PlPoPlService.findOneByPoNo(poNo);
+
+      if (!purchaseOrder) {
+        set.status = 404;
+        return buildResponse(null, {
+          startTime: startedAt,
+          message: "Purchase order not found",
+        });
+      }
+
+      return buildResponse(purchaseOrder, { startTime: startedAt });
+    },
+    {
+      detail: {
+        tags: ["Z_PO_PL_PO"],
+        summary: "Get purchase order detail by PO_No",
+        parameters: [
+          {
+            name: "poNo",
+            in: "path",
+            description: "PO number (PO_No) to lookup",
+            required: true,
+            schema: {
+              type: "string",
+            },
+          },
+        ],
+        responses: {
+          200: {
+            description: "Purchase order detail",
+          },
+          400: {
+            description: "Missing PO_No",
+          },
+          404: {
+            description: "Purchase order not found",
           },
         },
       },

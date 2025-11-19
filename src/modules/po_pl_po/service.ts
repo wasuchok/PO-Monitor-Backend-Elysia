@@ -150,4 +150,12 @@ export const PlPoPlService = {
             pagination,
         };
     },
+
+    findOneByPoNo: async (poNo: string) => {
+        return Po_Pl_Po.findAll({
+            where: {
+                po_no: poNo,
+            },
+        });
+    },
 };
