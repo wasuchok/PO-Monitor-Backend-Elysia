@@ -127,10 +127,16 @@ export const PlPoPlService = {
         }
 
         const result = await Po_Pl_Po.findAndCountAll({
-            attributes: ["po_no", "po_date", "division", "status"],
+            attributes: [
+                "po_no",
+                [fn("MAX", col("po_date")), "po_date"],
+                [fn("MAX", col("division")), "division"],
+                [fn("MAX", col("status")), "status"],
+            ],
             where,
+            group: ["po_no"],
             order: [
-                ["po_date", "ASC"],
+                [fn("MAX", col("po_date")), "ASC"],
                 ["po_no", "ASC"],
             ],
             limit,
@@ -138,11 +144,13 @@ export const PlPoPlService = {
             raw: true,
         });
 
+        const totalRecords = Array.isArray(result.count) ? result.count.length : result.count;
+
         const pagination: PaginationMeta = {
-            total: result.count,
+            total: totalRecords,
             currentPage: effectivePage,
             perPage,
-            totalPages: shouldPaginate ? Math.ceil(result.count / perPage) : 1,
+            totalPages: shouldPaginate ? Math.ceil(totalRecords / perPage) : 1,
         };
 
         return {
