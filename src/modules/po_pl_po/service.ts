@@ -203,13 +203,22 @@ export const PlPoPlService = {
         }
 
         return Po_Pl_Po.findAll({
-            where,
-            order: [
-                ["po_date", "DESC"],
-                ["po_no", "ASC"],
-                ["po_row", "ASC"],
+            attributes: [
+                "po_no",
+                [fn("MIN", col("PO_DATE")), "po_date"],
+                [fn("MIN", col("Division")), "division"],
+                [fn("MIN", col("Status")), "status"],
+                [fn("MIN", col("ArrvDate")), "arrival_date"],
             ],
-        });
+            where,
+            group: ["po_no"],
+            order: [
+                [fn("MIN", col("PO_DATE")), "DESC"],
+                ["po_no", "ASC"],
+            ],
+            raw: true,
+            distinct: true,
+        }) as unknown as PoPlPoInstance[];
     },
 
 
