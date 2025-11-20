@@ -38,9 +38,17 @@ export const PlPoPlController = new Elysia({ prefix: "/z_po_pl_po" })
       const perPage = parsePerPage(query?.perPage, 10);
       const filters: PoPlPoFilters = {
         division: parseString(query?.division),
-        arrivalDate: parseString(query?.arrivalDate ?? query?.arrDate),
+        arrivalDateFrom: parseString(
+          query?.arrivalDateFrom ?? query?.arrDateFrom
+        ),
+        arrivalDateTo: parseString(query?.arrivalDateTo ?? query?.arrDateTo),
         itemDesc: parseString(query?.itemDesc ?? query?.ITEMDESC),
       };
+      const arrivalDate = parseString(query?.arrivalDate ?? query?.arrDate);
+      if (arrivalDate) {
+        filters.arrivalDateFrom ??= arrivalDate;
+        filters.arrivalDateTo ??= arrivalDate;
+      }
       const result = await PlPoPlService.findAll(page, perPage, filters);
 
       return buildResponse(result.data, {
@@ -86,9 +94,19 @@ export const PlPoPlController = new Elysia({ prefix: "/z_po_pl_po" })
             },
           },
           {
-            name: "arrivalDate",
+            name: "arrivalDateFrom",
             in: "query",
-            description: "Filter by arrival date (YYYY-MM-DD)",
+            description: "Filter arrival date from (YYYY-MM-DD, inclusive)",
+            required: false,
+            schema: {
+              type: "string",
+              format: "date",
+            },
+          },
+          {
+            name: "arrivalDateTo",
+            in: "query",
+            description: "Filter arrival date to (YYYY-MM-DD, inclusive)",
             required: false,
             schema: {
               type: "string",

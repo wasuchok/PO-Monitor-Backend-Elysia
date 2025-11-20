@@ -6,6 +6,8 @@ type PoPlPoInstance = InstanceType<typeof Po_Pl_Po>;
 
 export interface PoPlPoFilters {
     division?: string;
+    arrivalDateFrom?: string;
+    arrivalDateTo?: string;
     arrivalDate?: string;
     itemDesc?: string;
 }
@@ -53,8 +55,26 @@ export const PlPoPlService = {
             where.division = filters.division;
         }
 
-        if (filters.arrivalDate) {
-            where.arrival_date = filters.arrivalDate;
+        const arrivalDateFrom = filters.arrivalDateFrom ?? filters.arrivalDate;
+        const arrivalDateTo = filters.arrivalDateTo ?? filters.arrivalDate;
+
+        if (arrivalDateFrom && arrivalDateTo) {
+            const [startDate, endDate] =
+                arrivalDateFrom <= arrivalDateTo
+                    ? [arrivalDateFrom, arrivalDateTo]
+                    : [arrivalDateTo, arrivalDateFrom];
+
+            where.arrival_date = {
+                [Op.between]: [startDate, endDate],
+            };
+        } else if (arrivalDateFrom) {
+            where.arrival_date = {
+                [Op.gte]: arrivalDateFrom,
+            };
+        } else if (arrivalDateTo) {
+            where.arrival_date = {
+                [Op.lte]: arrivalDateTo,
+            };
         }
 
         if (filters.itemDesc) {
@@ -79,8 +99,6 @@ export const PlPoPlService = {
             perPage,
             totalPages: shouldPaginate ? Math.ceil(result.count / perPage) : 1,
         };
-
-        console.log("wasuchok jainam")
 
         return {
             data: result.rows,
