@@ -1,4 +1,4 @@
-import { Op, type WhereOptions, col, fn } from "sequelize";
+import { Op, Sequelize, type WhereOptions, col, fn } from "sequelize";
 import type { PaginatedResult, PaginationMeta } from "../../utils/response";
 import { Po_Pl_Po } from "./model";
 
@@ -67,6 +67,10 @@ export const PlPoPlService = {
             limit,
             offset,
             where,
+            order: [
+                ["po_date", "DESC"],
+
+            ],
         });
 
         const pagination: PaginationMeta = {
@@ -75,6 +79,8 @@ export const PlPoPlService = {
             perPage,
             totalPages: shouldPaginate ? Math.ceil(result.count / perPage) : 1,
         };
+
+        console.log("wasuchok jainam")
 
         return {
             data: result.rows,
@@ -106,6 +112,7 @@ export const PlPoPlService = {
         perPage = 10,
         filters: CalendarFilters
     ): Promise<PaginatedResult<CalendarEntry>> => {
+
         const sanitizedMonth = Math.min(Math.max(filters.month, 1), 12);
         const sanitizedYear = filters.year;
         const shouldPaginate = perPage > 0;
@@ -117,7 +124,7 @@ export const PlPoPlService = {
         const endOfMonth = new Date(Date.UTC(sanitizedYear, sanitizedMonth, 0));
 
         const where: WhereOptions = {
-            po_date: {
+            arrival_date: {
                 [Op.between]: [formatDateOnly(startOfMonth), formatDateOnly(endOfMonth)],
             },
         };
@@ -129,28 +136,36 @@ export const PlPoPlService = {
         const result = await Po_Pl_Po.findAndCountAll({
             attributes: [
                 "po_no",
-                [fn("MAX", col("po_date")), "po_date"],
-                [fn("MAX", col("division")), "division"],
-                [fn("MAX", col("status")), "status"],
+                [Sequelize.fn("MIN", Sequelize.col("PO_DATE")), "po_date"],
+                [Sequelize.fn("MIN", Sequelize.col("Division")), "division"],
+                [Sequelize.fn("MIN", Sequelize.col("Status")), "status"],
+                [Sequelize.fn("MIN", Sequelize.col("ArrvDate")), "arrival_date"],
             ],
+
             where,
+
             group: ["po_no"],
+
             order: [
-                [fn("MAX", col("po_date")), "ASC"],
+                [Sequelize.literal("MIN(PO_DATE)"), "ASC"],
                 ["po_no", "ASC"],
             ],
+
             limit,
             offset,
             raw: true,
+            distinct: true,
         });
 
-        const totalRecords = Array.isArray(result.count) ? result.count.length : result.count;
+
+
+        const totalGroups = Array.isArray(result.count) ? result.count.length : result.count;
 
         const pagination: PaginationMeta = {
-            total: totalRecords,
+            total: totalGroups,
             currentPage: effectivePage,
             perPage,
-            totalPages: shouldPaginate ? Math.ceil(totalRecords / perPage) : 1,
+            totalPages: shouldPaginate ? Math.ceil(totalGroups / perPage) : 1,
         };
 
         return {
@@ -158,6 +173,7 @@ export const PlPoPlService = {
             pagination,
         };
     },
+
 
     findOneByPoNo: async (poNo: string) => {
         return Po_Pl_Po.findAll({

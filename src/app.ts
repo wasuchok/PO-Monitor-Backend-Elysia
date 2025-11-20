@@ -13,6 +13,10 @@ export const app = new Elysia()
             name: "Z_PO_PL_PO",
             description: "Z_PO_PL_PO",
           },
+          {
+            name: "Auth",
+            description: "Authentication endpoints",
+          },
         ],
       },
     })
