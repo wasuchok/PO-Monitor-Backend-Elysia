@@ -192,6 +192,26 @@ export const PlPoPlService = {
         };
     },
 
+    findTodayOrders: async (division?: string): Promise<PoPlPoInstance[]> => {
+        const today = formatDateOnly(new Date());
+        const where: WhereOptions = {
+            po_date: today,
+        };
+
+        if (division) {
+            where.division = division;
+        }
+
+        return Po_Pl_Po.findAll({
+            where,
+            order: [
+                ["po_date", "DESC"],
+                ["po_no", "ASC"],
+                ["po_row", "ASC"],
+            ],
+        });
+    },
+
 
     findOneByPoNo: async (poNo: string) => {
         return Po_Pl_Po.findAll({

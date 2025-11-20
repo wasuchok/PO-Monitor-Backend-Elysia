@@ -127,6 +127,38 @@ export const PlPoPlController = new Elysia({ prefix: "/z_po_pl_po" })
     }
   )
   .get(
+    "/today",
+    async ({ query }) => {
+      const startedAt = Date.now();
+      const division = parseString(query?.division);
+      const orders = await PlPoPlService.findTodayOrders(division);
+
+      return buildResponse(orders, { startTime: startedAt });
+    },
+    {
+      detail: {
+        tags: ["Z_PO_PL_PO"],
+        summary: "List today's purchase orders",
+        parameters: [
+          {
+            name: "division",
+            in: "query",
+            description: "Filter by Division exact match; omit to get all divisions",
+            required: false,
+            schema: {
+              type: "string",
+            },
+          },
+        ],
+        responses: {
+          200: {
+            description: "All POs for today",
+          },
+        },
+      },
+    }
+  )
+  .get(
     "/divisions",
     async () => {
       const startedAt = Date.now();
